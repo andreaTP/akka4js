@@ -1,0 +1,10 @@
+{
+  "name": "akkajs_demo_ui",
+  "version": "1.0.0",
+  "description": "Demo usage of Akka.Js from JS Client side",
+  "author": "Andrea Peruffo",
+  "license": "MIT",
+  "dependencies": {
+    "akkajs": "latest"
+  }
+}

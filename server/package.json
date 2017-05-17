@@ -1,0 +1,13 @@
+{
+  "name": "akkajs_demo",
+  "version": "1.0.0",
+  "description": "Demo usage of Akka.Js from JS Server",
+  "main": "main.js",
+  "author": "Andrea Peruffo",
+  "license": "MIT",
+  "dependencies": {
+    "akkajs": "latest",
+    "websocket": "latest",
+    "node-tweet-stream": "latest"
+  }
+}
