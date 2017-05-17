@@ -1,2 +1,2 @@
 #!/bin/sh
-node out.js
+node main.js

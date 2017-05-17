@@ -7,7 +7,9 @@
   "license": "MIT",
   "dependencies": {
     "akkajs": "latest",
-    "websocket": "latest",
-    "node-tweet-stream": "latest"
+    "bufferutil": "^3.0.0",
+    "node-tweet-stream": "latest",
+    "utf-8-validate": "^3.0.1",
+    "websocket": "latest"
   }
 }

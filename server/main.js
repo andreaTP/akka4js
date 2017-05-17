@@ -66,7 +66,6 @@ class WSServerActor extends akkajs.Actor {
     })
 
     wsServer.on(`request`, function(req) {
-      console.log("request received")
       var conn = req.accept(false, req.origin)
       var chan = self.spawn(new WSChannel(conn))
     })
