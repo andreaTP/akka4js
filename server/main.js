@@ -3,35 +3,41 @@ const akkajs = require("akkajs")
 const fs = require("fs")
 const twitterModule = require("node-tweet-stream")
 
+const credentials =
+  JSON.parse(fs.readFileSync(".credentials", "utf8"))
+
 class TwitterActor extends akkajs.Actor {
   constructor() {
-    var twitter = new twitterModule(
-      JSON.parse(fs.readFileSync(".credentials", "utf8"))
-    )
-    super(function(msg) {
-      twitter.track(msg)
-    },
-    function() {},  //preStart
-    function() {    //postStop
-      twitter.untrackAll()
-      twitter.abort()
-    })
-    const self = this
+    var twitter = new twitterModule(credentials)
+    super(
+      function(msg) {
+        console.log(`going to track ${msg}`)
+        twitter.track(msg)
+      },
+      function() {  //preStart
+        const self = this
 
-    twitter.on("tweet", function(tweet) {
-      self.parent().tell(JSON.stringify(tweet))
-    })
+        twitter.on("tweet", function(tweet) {
+          self.parent().tell(JSON.stringify(tweet))
+        })
+      },
+      function() {    //postStop
+        twitter.untrackAll()
+        twitter.abort()
+      }
+    )
   }
 }
 
 class WSChannel extends akkajs.Actor {
   constructor(conn) {
-    var twitterActor
     super(
       function(msg) { conn.send(msg) },
       function() {
         var self = this
+
         var twitterActor = self.spawn(new TwitterActor())
+
         conn.on(`message`, function(msg) {
           twitterActor.tell(msg.utf8Data)
         })
@@ -43,32 +49,35 @@ class WSChannel extends akkajs.Actor {
 
 class WSServerActor extends akkajs.Actor {
   constructor(port) {
-    super(function(msg) {})
-    const self = this
+    super(
+      function(msg) {},
+      function() {
+        const self = this
 
-    var WebSocketServer = require('websocket').server
-    var http = require('http')
+        var WebSocketServer = require('websocket').server
+        var http = require('http')
 
-    var server = http.createServer(function(request, response) {
-      response.writeHead(404)
-      response.end(`not available`)
-    })
+        var server = http.createServer(function(request, response) {
+          response.writeHead(404)
+          response.end(`not available`)
+        })
 
-    var wsServer = new WebSocketServer({
-      "httpServer": server,
-      "keepaliveInterval": 1000,
-      "keepaliveGracePeriod": 3000,
-      "autoAcceptConnections": false
-    })
+        var wsServer = new WebSocketServer({
+          "httpServer": server,
+          "keepaliveInterval": 1000,
+          "keepaliveGracePeriod": 3000,
+          "autoAcceptConnections": false
+        })
 
-    server.listen(port, function() {
-      console.log(`Server is listening on port ${port}`)
-    })
+        server.listen(port, function() {
+          console.log(`Server is listening on port ${port}`)
+        })
 
-    wsServer.on(`request`, function(req) {
-      var conn = req.accept(false, req.origin)
-      var chan = self.spawn(new WSChannel(conn))
-    })
+        wsServer.on(`request`, function(req) {
+          self.spawn(new WSChannel(req.accept(false, req.origin)))
+        })
+      }
+    )
   }
 }
 
