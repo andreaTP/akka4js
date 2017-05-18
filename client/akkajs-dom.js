@@ -32,7 +32,7 @@ class DomActor extends akkajs.Actor {
         if (msg instanceof Update)
           update(self, msg.value)
         else if (msg instanceof GetParentNode)
-          this.sender().tell(new ParentNode(node))
+          self.sender().tell(new ParentNode(node))
         else if (msg instanceof ParentNode)
           assignParent(self, msg.node)
         else
