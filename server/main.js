@@ -1,10 +1,10 @@
 
-const akkajs = require("akkajs")
-const fs = require("fs")
-const twitterModule = require("node-tweet-stream")
+const akkajs = require('akkajs')
+const fs = require('fs')
+const twitterModule = require('node-tweet-stream')
 
 const credentials =
-  JSON.parse(fs.readFileSync(".credentials", "utf8"))
+  JSON.parse(fs.readFileSync(`.credentials`, `utf8`))
 
 class TwitterActor extends akkajs.Actor {
   constructor() {
@@ -17,7 +17,7 @@ class TwitterActor extends akkajs.Actor {
       function() {  //preStart
         const self = this
 
-        twitter.on("tweet", function(tweet) {
+        twitter.on(`tweet`, function(tweet) {
           self.parent().tell(JSON.stringify(tweet))
         })
       },
@@ -54,8 +54,8 @@ class WSServerActor extends akkajs.Actor {
       function() {
         const self = this
 
-        var WebSocketServer = require('websocket').server
-        var http = require('http')
+        var WebSocketServer = require(`websocket`).server
+        var http = require(`http`)
 
         var server = http.createServer(function(request, response) {
           response.writeHead(404)
@@ -63,10 +63,10 @@ class WSServerActor extends akkajs.Actor {
         })
 
         var wsServer = new WebSocketServer({
-          "httpServer": server,
-          "keepaliveInterval": 1000,
-          "keepaliveGracePeriod": 3000,
-          "autoAcceptConnections": false
+          `httpServer`: server,
+          `keepaliveInterval`: 1000,
+          `keepaliveGracePeriod`: 3000,
+          `autoAcceptConnections`: false
         })
 
         server.listen(port, function() {
@@ -89,6 +89,6 @@ system.spawn(new WSServerActor(9002))
 /*
 system.spawn(new akkajs.Actor(
   function(msg) { console.log(`DEMO ${msg}`)},
-  function() { this.spawn(new TwitterActor()).tell("Pizza") } // preStart
+  function() { this.spawn(new TwitterActor()).tell(`Pizza`) } // preStart
 ))
 */
