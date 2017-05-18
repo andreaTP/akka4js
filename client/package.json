@@ -5,6 +5,7 @@
   "author": "Andrea Peruffo",
   "license": "MIT",
   "dependencies": {
-    "akkajs": "latest"
+    "akkajs": "latest",
+    "virtual-dom": "latest"
   }
 }
