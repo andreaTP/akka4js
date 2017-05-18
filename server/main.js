@@ -63,10 +63,10 @@ class WSServerActor extends akkajs.Actor {
         })
 
         var wsServer = new WebSocketServer({
-          `httpServer`: server,
-          `keepaliveInterval`: 1000,
-          `keepaliveGracePeriod`: 3000,
-          `autoAcceptConnections`: false
+          httpServer: server,
+          keepaliveInterval: 1000,
+          keepaliveGracePeriod: 3000,
+          autoAcceptConnections: false
         })
 
         server.listen(port, function() {

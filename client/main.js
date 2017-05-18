@@ -1,22 +1,30 @@
 const akkajs = require('akkajs')
 const h = require('virtual-dom/h')
-const diff = require('virtual-dom/diff')
-const patch = require('virtual-dom/patch')
-const createElement = require('virtual-dom/create-element')
-
-var system = akkajs.ActorSystem.create()
+const akkajs_dom = require('./akkajs-dom.js')
 
 class Track {
   constructor(topic) { this.topic = topic }
 }
+class Tweet {
+  constructor(from, text) {
+    this.from = from
+    this.text = text
+  }
+}
+
+var address = `ws://localhost:9002`
 
 class WSActor extends akkajs.Actor {
   constructor(address) {
 
-    var operative = function(ws) {
+    var operative = function(self, ws) {
       return function(msg) {
-        if (msg instanceof Track) ws.send(msg.topic)
-        else console.log(`tweet `+msg)
+        if (msg instanceof Track)
+          ws.send(msg.topic)
+        else {
+          var json = JSON.parse(msg)
+          self.parent().tell(new Tweet(json.user.name, json.text))
+        }
       }
     }
 
@@ -27,129 +35,81 @@ class WSActor extends akkajs.Actor {
 
         var ws = new WebSocket(address)
 
-        ws.onopen = function() { self.become(operative(ws)) }
+        ws.onopen = function() { self.become(operative(self, ws)) }
         ws.onmessage = function(event) { self.ref.tell(event.data) }
       }
     )
   }
 }
 
-var address = `ws://localhost:9002`
-var wsActor = system.spawn(new WSActor(address))
-
-setTimeout(function() {
-  console.log(`starting`)
-  wsActor.tell(new Track(`pizza`))
-}, 2000)
-
-/*
-update message:
-{
-  `update`: <newValue>
-}
-
-{`getparent`: true}
-*/
-
-class UpdateDom { constructor(value) { this.value = value } }
-class GetParentNode { constructor() {} }
-class ParentNode { constructor(node) { this.node = node } }
-
-class DomActor extends akkajs.Actor {
-  constructor(renderFn, operative, parentNode) {
-    var tree
-    var node
-    var parent
-
-    var assignParent = function(p) {
-      parent = p
-      parent.appendChild(node)
-    }
-
-    var update = function(self, newValue) {
-      var newTree = renderFn(self, newValue)
-      var patches = diff(tree, newTree)
-      node = patch(node, patches)
-      tree = newTree
-    }
-
+class TrackActor extends akkajs_dom.DomActor {
+  constructor() {
     super(
-      function (msg) {
-        var self = this
-
-        if (msg instanceof UpdateDom)
-          update(self, msg.value)
-        else if (msg instanceof GetParentNode)
-          this.sender().tell(new ParentNode(node))
-        else if (msg instanceof ParentNode)
-          assignParent(msg.node)
-        else
-          operative(this, msg)
+      function(self) {
+        return h(`div`, [
+          h(`input`, { id: `track`, placeholder: `what to track ...` }),
+          h(`button`, {
+            onclick: ev => {
+              self.parent().tell(new Track(document.getElementById("track").value))
+            }
+          }, `TRACK`)
+        ])
       },
-      function() {
-        var self = this
-
-        tree = renderFn(self)
-        node = createElement(tree)
-
-        if (parentNode != null)
-          assignParent(parentNode)
-        else this.parent().tell(new GetParentNode())
-      },
-      function() {
-        try {
-          parent.removeChild(node)
-          node.remove()
-        } catch (e) {}
-      }
+      function() {},
+      function() {}
     )
   }
 }
-/*
-var uiActor = system.spawn(new DomActor(
-  function(self, value) {
-    var str = `Hello world`
-    if (value != null)
-      str += ` ${value}`
 
-    return h(`h1`, str)
-  },
-  function(self, msg) { console.log(`free message `+msg) },
-  document.getElementById(`root`)
-))
-
-var count = 0
-
-setInterval(function() {
-  uiActor.tell({`update`: `${count}`})
-  count += 1
-}, 2000)
-*/
-var elemActor = function(text) {
-  return new DomActor(
-    function(self) {
-      return h(`li`, [
-        text,
-        h(`button`, { onclick: ev => { self.ref.kill() } }, `X`)
-      ])
-    },
-    function(self, msg) {}
-  )
+class LastMsgActor extends akkajs_dom.DomActor {
+  constructor() {
+    super(
+      function(self, tweet) {
+        if (tweet == null) return h(`div`)
+        else return h(`div`, [
+          h(`h3`, tweet.from),
+          h(`p`, tweet.text)
+        ])
+      },
+      function() {},
+      function() {}
+    )
+  }
 }
 
-var listActor = system.spawn(new DomActor(
-  function() { return h(`ul`, `todo`) },
-  function(self, msg) {
-    self.spawn(elemActor(`elem ${msg}`))
-  },
-  document.getElementById(`root`)
-))
+class UIActor extends akkajs_dom.DomActor {
+  constructor() {
+    var wsActor, trackActor, lmActor
+    super(
+      function() { return h(`div`) },
+      function(self) {
+        wsActor = self.spawn(new WSActor(address))
+        trackActor = self.spawn(new TrackActor())
+        lmActor = self.spawn(new LastMsgActor())
+      },
+      function (self, msg) {
+        if (msg instanceof Track)
+          wsActor.tell(msg)
+        else if (msg instanceof Tweet)
+          lmActor.tell(new akkajs_dom.Update(msg))
+        else
+          console.warning(`unhandled ${msg}`)
+      },
+      document.body
+    )
+  }
+}
 
-var count = 0
+var system = akkajs.ActorSystem.create()
 
-var interval = setInterval(function() {
-  listActor.tell(`${count}`)
-  count += 1
-  if (count > 10)
-    clearInterval(interval)
-}, 2000)
+var uiActor = system.spawn(new UIActor)
+
+//setTimeout( function() {
+//  uiActor.tell(new Track(`pizza`))
+//}, 2000)
+//var wsActor = system.spawn(new WSActor(address))
+
+//setTimeout(function() {
+//  console.log(`starting`)
+//  wsActor.tell(new Track(`pizza`))
+//}, 2000)
