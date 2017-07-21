@@ -4,8 +4,15 @@
   "description": "Demo usage of Akka.Js from JS Client side",
   "author": "Andrea Peruffo",
   "license": "MIT",
+  "scripts": {
+    "build": "browserify ./main.js -o ./out.js",
+    "clean": "rm ./out.js"
+  },
   "dependencies": {
     "akkajs": "latest",
     "virtual-dom": "latest"
+  },
+  "devDependencies": {
+    "browserify": "^14.4.0"
   }
 }
