@@ -1,11 +1,20 @@
+## Dependencies
 
-Server Commands:
+* Node.js
 
-npm install
-node main.js
+## Server
 
-Client
+### Setup
 
-cd ui
-./build.sh
-open index.html in a browser
+* `cd server`
+* `npm install`
+* `node main.js`
+
+## Client
+
+### Setup
+
+* `cd client`
+* `npm run build`
+* open `index.html` in a browser
+
